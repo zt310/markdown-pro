@@ -9,6 +9,8 @@
   let isDark = false;
   let fileTreeVisible = true;
   let mermaidId = 0;
+  let menuOpen = false;
+  let activeMenuIndex = -1;
 
   // ===== DOM Refs =====
   const $ = (sel) => document.querySelector(sel);
@@ -389,6 +391,8 @@ img{max-width:100%;border-radius:8px}</style></head>
   }
 
   // ===== IPC Event Handlers =====
+  // Get menu structure and build UI
+  window.mdAPI.getMenuStructure().then(menuData => buildMenuUI(menuData));
   window.mdAPI.onFileOpened((data) => {
     currentFilePath = data.filePath;
     currentContent = data.content;
@@ -417,36 +421,158 @@ img{max-width:100%;border-radius:8px}</style></head>
   window.mdAPI.onExportHtml(() => exportHTML());
 
   // ===== Update Status Handler =====
-  // Listen for update events from main process
   const cleanupUpdateListener = window.mdAPI.onUpdateStatus((status, data) => {
     const el = document.getElementById('status-grammar');
     switch (status) {
-      case 'checking':
-        el.textContent = '⏳ 检查更新...';
-        break;
-      case 'available':
-        el.textContent = `⬇️ v${data.version} 可用`;
-        setTimeout(() => el.textContent = 'CommonMark + GFM', 8000);
-        break;
-      case 'downloading':
-        el.textContent = '📥 下载更新中...';
-        break;
-      case 'progress':
-        el.textContent = `📥 ${data.percent}%`;
-        break;
-      case 'downloaded':
-        el.textContent = '✅ 更新已就绪，重启安装';
-        break;
-      case 'up-to-date':
-        el.textContent = '✅ 已是最新';
-        setTimeout(() => el.textContent = 'CommonMark + GFM', 4000);
-        break;
-      case 'error':
-        el.textContent = '⚠️ 更新检查失败';
-        setTimeout(() => el.textContent = 'CommonMark + GFM', 4000);
-        break;
+      case 'checking': el.textContent = '⏳ 检查更新...'; break;
+      case 'available': el.textContent = `⬇️ v${data.version} 可用`; setTimeout(() => el.textContent = 'CommonMark + GFM', 8000); break;
+      case 'downloading': el.textContent = '📥 下载更新中...'; break;
+      case 'progress': el.textContent = `📥 ${data.percent}%`; break;
+      case 'downloaded': el.textContent = '✅ 更新已就绪，重启安装'; break;
+      case 'up-to-date': el.textContent = '✅ 已是最新'; setTimeout(() => el.textContent = 'CommonMark + GFM', 4000); break;
+      case 'error': el.textContent = '⚠️ 更新检查失败'; setTimeout(() => el.textContent = 'CommonMark + GFM', 4000); break;
     }
   });
+
+  // ===== Menu System =====
+  function buildMenuUI(menuData) {
+    const bar = document.getElementById('menu-bar');
+    const panel = document.getElementById('menu-panel');
+    bar.innerHTML = '';
+    menuData.forEach((group, i) => {
+      const item = document.createElement('div');
+      item.className = 'menu-bar-item';
+      item.textContent = group.label;
+      item.dataset.index = i;
+      item.addEventListener('click', () => toggleMenuPanel(i, menuData));
+      item.addEventListener('mouseenter', () => { if (menuOpen) toggleMenuPanel(i, menuData); });
+      bar.appendChild(item);
+    });
+  }
+
+  function toggleMenuPanel(index, menuData) {
+    const barItems = document.querySelectorAll('.menu-bar-item');
+    const panel = document.getElementById('menu-panel');
+    const bar = document.getElementById('menu-bar');
+
+    if (activeMenuIndex === index && panel.classList.contains('open')) {
+      panel.classList.remove('open');
+      barItems.forEach(i => i.classList.remove('active'));
+      activeMenuIndex = -1;
+      return;
+    }
+
+    activeMenuIndex = index;
+    barItems.forEach((i, idx) => i.classList.toggle('active', idx === index));
+
+    const group = menuData[index];
+    let html = '';
+    group.items.forEach(item => {
+      if (item.type === 'separator') {
+        html += '<div class="menu-separator"></div>';
+      } else {
+        html += `<div class="menu-item" data-action="${item.action}">
+          <span>${item.label}</span>
+          ${item.accelerator ? `<span class="shortcut">${item.accelerator}</span>` : ''}
+        </div>`;
+      }
+    });
+    panel.innerHTML = html;
+    panel.classList.add('open');
+
+    // Position panel below the clicked item
+    const trigger = document.getElementById('menu-trigger');
+    const barRect = bar.getBoundingClientRect();
+    panel.style.left = trigger.getBoundingClientRect().left + 'px';
+    panel.style.top = barRect.bottom + 'px';
+
+    // Click handlers
+    panel.querySelectorAll('.menu-item').forEach(el => {
+      el.addEventListener('click', () => handleMenuAction(el.dataset.action));
+    });
+  }
+
+  function handleMenuAction(action) {
+    // Close menu
+    document.getElementById('menu-panel').classList.remove('open');
+    document.querySelectorAll('.menu-bar-item').forEach(i => i.classList.remove('active'));
+    menuOpen = false;
+    activeMenuIndex = -1;
+
+    switch (action) {
+      case 'open-file': window.mdAPI.openFileDialog(); break;
+      case 'open-folder': window.mdAPI.openFolderDialog(); break;
+      case 'save': window.mdAPI.saveFile(currentContent, currentFilePath); break;
+      case 'save-as': window.mdAPI.saveAsDialog(currentContent); break;
+      case 'export-html': exportHTML(); break;
+      case 'export-pdf': exportPDF(); break;
+      case 'quit': window.mdAPI.close(); break;
+      case 'undo': document.execCommand('undo'); break;
+      case 'redo': document.execCommand('redo'); break;
+      case 'cut': document.execCommand('cut'); break;
+      case 'copy': document.execCommand('copy'); break;
+      case 'paste': document.execCommand('paste'); break;
+      case 'select-all': document.execCommand('selectAll'); break;
+      case 'toggle-theme': toggleTheme(); break;
+      case 'toggle-filetree': toggleFileTree(); break;
+      case 'fullscreen': document.querySelector('.win-btn-max').click(); break;
+      case 'devtools': break; // Handled by Electron
+      case 'check-update': window.mdAPI.checkForUpdates(); break;
+      case 'about': window.mdAPI.getAppVersion().then(v => alert(`MarkDown Pro v${v}\n支持 CommonMark · GFM · Mermaid · KaTeX · 双链笔记\n\n完全离线，不依赖浏览器。`)); break;
+      case 'github': window.open('https://github.com/zt310/markdown-pro'); break;
+      case 'report-issue': window.open('https://github.com/zt310/markdown-pro/issues/new'); break;
+    }
+  }
+
+  // Menu trigger button
+  document.getElementById('menu-trigger').addEventListener('click', () => {
+    menuOpen = !menuOpen;
+    document.getElementById('menu-bar').classList.toggle('open', menuOpen);
+    document.getElementById('menu-trigger').classList.toggle('active', menuOpen);
+    if (!menuOpen) {
+      document.getElementById('menu-panel').classList.remove('open');
+      document.querySelectorAll('.menu-bar-item').forEach(i => i.classList.remove('active'));
+      activeMenuIndex = -1;
+    }
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.dropdown-menu') && !e.target.closest('.menu-trigger')) {
+      menuOpen = false;
+      document.getElementById('menu-bar').classList.remove('open');
+      document.getElementById('menu-panel').classList.remove('open');
+      document.getElementById('menu-trigger').classList.remove('active');
+      document.querySelectorAll('.menu-bar-item').forEach(i => i.classList.remove('active'));
+      activeMenuIndex = -1;
+    }
+  });
+
+  // ===== Window Controls =====
+  document.getElementById('btn-min').addEventListener('click', () => window.mdAPI.minimize());
+  document.getElementById('btn-max').addEventListener('click', () => window.mdAPI.maximize());
+  document.getElementById('btn-close').addEventListener('click', () => window.mdAPI.close());
+
+  window.mdAPI.onWindowState((state) => {
+    const btn = document.getElementById('btn-max');
+    btn.textContent = state === 'maximized' ? '❐' : '□';
+    btn.title = state === 'maximized' ? '还原' : '最大化';
+  });
+
+  // ===== File Tree Toggle =====
+  function toggleFileTree() {
+    fileTreeVisible = !fileTreeVisible;
+    fileTree.classList.toggle('collapsed', !fileTreeVisible);
+    document.getElementById('btn-filetree').style.opacity = fileTreeVisible ? '1' : '0.5';
+  }
+
+  // ===== PDF Export =====
+  async function exportPDF() {
+    const result = await window.mdAPI.exportPdf();
+    if (result?.success) {
+      showToast(`✅ PDF 已导出: ${result.filePath.split('\\').pop()}`);
+    }
+  }
 
   // ===== Keyboard Shortcuts (in-page) =====
   document.addEventListener('keydown', (e) => {
@@ -471,20 +597,24 @@ img{max-width:100%;border-radius:8px}</style></head>
       e.preventDefault();
       exportHTML();
     }
+    if (isCtrl && e.key === 'p') {
+      e.preventDefault();
+      exportPDF();
+    }
+    if (isCtrl && e.key === 'b') {
+      e.preventDefault();
+      toggleFileTree();
+    }
   });
 
   // ===== UI Button Handlers =====
   document.getElementById('btn-open').addEventListener('click', openFile);
   document.getElementById('btn-save').addEventListener('click', saveFile);
-  document.getElementById('btn-export').addEventListener('click', exportHTML);
+  document.getElementById('btn-export-html').addEventListener('click', exportHTML);
+  document.getElementById('btn-export-pdf').addEventListener('click', exportPDF);
   document.getElementById('btn-theme').addEventListener('click', toggleTheme);
   document.getElementById('btn-open-folder').addEventListener('click', () => window.mdAPI.openFolderDialog());
-
-  document.getElementById('btn-filetree').addEventListener('click', () => {
-    fileTreeVisible = !fileTreeVisible;
-    fileTree.classList.toggle('collapsed', !fileTreeVisible);
-    document.getElementById('btn-filetree').style.opacity = fileTreeVisible ? '1' : '0.5';
-  });
+  document.getElementById('btn-filetree').addEventListener('click', toggleFileTree);
 
   // ===== Drag & Drop =====
   document.addEventListener('dragover', (e) => e.preventDefault());

@@ -9,36 +9,36 @@ contextBridge.exposeInMainWorld('mdAPI', {
   readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
   readDirectory: (dirPath) => ipcRenderer.invoke('read-directory', dirPath),
   getFileInfo: (filePath) => ipcRenderer.invoke('get-file-info', filePath),
-  getAppPath: (name) => ipcRenderer.invoke('app-get-path', name),
+
+  // Window controls
+  minimize: () => ipcRenderer.invoke('window-minimize'),
+  maximize: () => ipcRenderer.invoke('window-maximize'),
+  close: () => ipcRenderer.invoke('window-close'),
+  isMaximized: () => ipcRenderer.invoke('window-is-maximized'),
+
+  // Export
+  exportPdf: () => ipcRenderer.invoke('export-pdf'),
+  getMenuStructure: () => ipcRenderer.invoke('get-menu-structure'),
 
   // Update
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
 
-  // App events
-  onFileOpened: (callback) => {
-    ipcRenderer.on('file-opened', (event, data) => callback(data));
-  },
-  onFileSaved: (callback) => {
-    ipcRenderer.on('file-saved', (event, data) => callback(data));
-  },
-  onFolderOpened: (callback) => {
-    ipcRenderer.on('folder-opened', (event, data) => callback(data));
-  },
-  onToggleTheme: (callback) => {
-    ipcRenderer.on('toggle-theme', () => callback());
-  },
-  onExportHtml: (callback) => {
-    ipcRenderer.on('export-html', () => callback());
+  // Events
+  onFileOpened: (cb) => ipcRenderer.on('file-opened', (_e, d) => cb(d)),
+  onFileSaved: (cb) => ipcRenderer.on('file-saved', (_e, d) => cb(d)),
+  onFolderOpened: (cb) => ipcRenderer.on('folder-opened', (_e, d) => cb(d)),
+  onToggleTheme: (cb) => ipcRenderer.on('toggle-theme', () => cb()),
+  onExportHtml: (cb) => ipcRenderer.on('export-html', () => cb()),
+  onWindowState: (cb) => ipcRenderer.on('window-state', (_e, s) => cb(s)),
+  onUpdateStatus: (cb) => {
+    const h = (_e, s, d) => cb(s, d);
+    ipcRenderer.on('update-status', h);
+    return () => ipcRenderer.removeListener('update-status', h);
   },
 
-  // Update events
-  onUpdateStatus: (callback) => {
-    const handler = (event, status, data) => callback(status, data);
-    ipcRenderer.on('update-status', handler);
-    return () => ipcRenderer.removeListener('update-status', handler);
-  },
+  // Menu actions
+  onMenuAction: (cb) => ipcRenderer.on('menu-action', (_e, a) => cb(a)),
 
-  // Utility
   platform: process.platform,
 });

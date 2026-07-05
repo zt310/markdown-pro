@@ -15,6 +15,7 @@ function createWindow() {
     minHeight: 500,
     title: 'MarkDown Pro',
     icon: path.join(__dirname, 'src', 'assets', 'icon.png'),
+    frame: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -31,13 +32,12 @@ function createWindow() {
     mainWindow.show();
   });
 
+  mainWindow.on('maximize', () => mainWindow.webContents.send('window-state', 'maximized'));
+  mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-state', 'normal'));
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-
-  // Build application menu
-  const menuTemplate = buildMenu();
-  Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
 
   // Initialize auto-updater
   setupAutoUpdater();
@@ -277,6 +277,90 @@ ipcMain.handle('check-for-updates', () => {
 ipcMain.handle('get-app-version', () => {
   return app.getVersion();
 });
+
+// Window controls
+ipcMain.handle('window-minimize', () => mainWindow?.minimize());
+ipcMain.handle('window-maximize', () => {
+  if (mainWindow?.isMaximized()) mainWindow.unmaximize();
+  else mainWindow?.maximize();
+});
+ipcMain.handle('window-close', () => mainWindow?.close());
+ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized());
+
+// PDF export
+ipcMain.handle('export-pdf', async () => {
+  const { filePath, canceled } = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: (currentFilePath || 'untitled').replace(/\.\w+$/, '') + '.pdf',
+    filters: [{ name: 'PDF 文件', extensions: ['pdf'] }],
+  });
+  if (canceled || !filePath) return { success: false, canceled: true };
+
+  try {
+    const pdfData = await mainWindow.webContents.printToPDF({
+      printBackground: true,
+      preferCSSPageSize: true,
+      margins: { top: 20, bottom: 20, left: 20, right: 20 },
+    });
+    fs.writeFileSync(filePath, pdfData);
+    return { success: true, filePath };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// Send menu structure to renderer
+ipcMain.handle('get-menu-structure', () => {
+  return buildMenuStructure();
+});
+
+function buildMenuStructure() {
+  return [
+    {
+      label: '文件', items: [
+        { label: '打开文件...', accelerator: 'Ctrl+O', action: 'open-file' },
+        { label: '打开文件夹...', accelerator: 'Ctrl+Shift+O', action: 'open-folder' },
+        { type: 'separator' },
+        { label: '保存', accelerator: 'Ctrl+S', action: 'save' },
+        { label: '另存为...', accelerator: 'Ctrl+Shift+S', action: 'save-as' },
+        { type: 'separator' },
+        { label: '导出 HTML...', accelerator: 'Ctrl+E', action: 'export-html' },
+        { label: '导出 PDF...', accelerator: 'Ctrl+P', action: 'export-pdf' },
+        { type: 'separator' },
+        { label: '退出', accelerator: 'Ctrl+Q', action: 'quit' },
+      ],
+    },
+    {
+      label: '编辑', items: [
+        { label: '撤销', action: 'undo' },
+        { label: '重做', action: 'redo' },
+        { type: 'separator' },
+        { label: '剪切', action: 'cut' },
+        { label: '复制', action: 'copy' },
+        { label: '粘贴', action: 'paste' },
+        { label: '全选', action: 'select-all' },
+      ],
+    },
+    {
+      label: '视图', items: [
+        { label: '切换主题', accelerator: 'Ctrl+T', action: 'toggle-theme' },
+        { label: '切换文件树', accelerator: 'Ctrl+B', action: 'toggle-filetree' },
+        { type: 'separator' },
+        { label: '全屏', accelerator: 'F11', action: 'fullscreen' },
+        { label: '开发者工具', accelerator: 'Ctrl+Shift+I', action: 'devtools' },
+      ],
+    },
+    {
+      label: '帮助', items: [
+        { label: '检查更新...', accelerator: 'Ctrl+U', action: 'check-update' },
+        { type: 'separator' },
+        { label: '关于 MarkDown Pro', action: 'about' },
+        { type: 'separator' },
+        { label: 'GitHub 主页', action: 'github' },
+        { label: '报告问题', action: 'report-issue' },
+      ],
+    },
+  ];
+}
 
 // ===== File Operations =====
 async function openFileDialog() {

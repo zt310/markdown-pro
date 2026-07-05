@@ -10,20 +10,31 @@
 <body>
 <div class="app-container">
 
-  <!-- ===== Title Bar ===== -->
-  <header class="titlebar">
+  <!-- ===== Custom Title Bar (frameless) ===== -->
+  <header class="titlebar" id="titlebar">
     <div class="titlebar-left">
+      <div class="menu-trigger" id="menu-trigger" title="菜单">☰</div>
       <div class="logo">◈ Mark<span>Down</span> <small>Pro</small></div>
     </div>
-    <div class="titlebar-center">
+    <div class="titlebar-center" id="titlebar-drag">
       <span class="filename" id="filename-display">untitled.md</span>
       <span class="save-indicator" id="save-indicator"></span>
     </div>
     <div class="titlebar-right">
-      <button class="btn btn-icon" id="btn-theme" title="切换主题 (Ctrl+T)">🌙</button>
-      <button class="btn btn-icon" id="btn-filetree" title="文件树">📂</button>
+      <button class="win-btn" id="btn-theme" title="切换主题 (Ctrl+T)">🌙</button>
+      <button class="win-btn" id="btn-filetree" title="文件树 (Ctrl+B)">📂</button>
+      <div class="win-divider"></div>
+      <button class="win-btn win-btn-min" id="btn-min" title="最小化">─</button>
+      <button class="win-btn win-btn-max" id="btn-max" title="最大化">□</button>
+      <button class="win-btn win-btn-close" id="btn-close" title="关闭">✕</button>
     </div>
   </header>
+
+  <!-- ===== Dropdown Menu ===== -->
+  <nav class="dropdown-menu" id="dropdown-menu">
+    <div class="menu-bar" id="menu-bar"></div>
+    <div class="menu-panel" id="menu-panel"></div>
+  </nav>
 
   <!-- ===== Main Content ===== -->
   <div class="main-content">
@@ -37,18 +48,19 @@
       <div class="file-tree-body" id="file-tree-body">
         <div class="file-tree-empty">
           <p>尚未打开文件夹</p>
-          <p class="hint">点击上方按钮或使用<br>Ctrl+Shift+O 打开</p>
+          <p class="hint">点击上方按钮<br>或 Ctrl+Shift+O</p>
         </div>
       </div>
     </aside>
 
-    <!-- Editor / Viewer Pane -->
+    <!-- Content Pane -->
     <main class="content-pane">
       <div class="toolbar">
         <div class="toolbar-left">
           <button class="btn btn-small" id="btn-open" title="打开文件 (Ctrl+O)">📂 打开</button>
           <button class="btn btn-small" id="btn-save" title="保存 (Ctrl+S)">💾 保存</button>
-          <button class="btn btn-small" id="btn-export" title="导出 HTML (Ctrl+E)">📄 导出</button>
+          <button class="btn btn-small" id="btn-export-html" title="导出 HTML (Ctrl+E)">🌐 HTML</button>
+          <button class="btn btn-small" id="btn-export-pdf" title="导出 PDF (Ctrl+P)">📄 PDF</button>
         </div>
         <div class="toolbar-right">
           <span class="word-count" id="word-count">0 字</span>
@@ -64,7 +76,7 @@
               <div><kbd>Ctrl+O</kbd> 打开文件</div>
               <div><kbd>Ctrl+Shift+O</kbd> 打开文件夹</div>
               <div><kbd>Ctrl+T</kbd> 切换主题</div>
-              <div><kbd>Ctrl+E</kbd> 导出 HTML</div>
+              <div><kbd>Ctrl+P</kbd> 导出 PDF</div>
             </div>
           </div>
         </div>
@@ -90,8 +102,6 @@
 <script src="../node_modules/katex/dist/katex.min.js"></script>
 <script src="../node_modules/mermaid/dist/mermaid.min.js"></script>
 <script src="../node_modules/highlight.js/highlight.min.js"></script>
-<script src="plugins/wikilinks.js"></script>
-<script src="plugins/math.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
