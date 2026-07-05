@@ -1,0 +1,323 @@
+const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require('electron');
+const path = require('path');
+const fs = require('fs');
+
+// ===== Window Management =====
+let mainWindow = null;
+let currentFilePath = null;
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1280,
+    height: 800,
+    minWidth: 800,
+    minHeight: 500,
+    title: 'MarkDown Pro',
+    icon: path.join(__dirname, 'src', 'assets', 'icon.png'),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+    backgroundColor: '#ffffff',
+    show: false,
+  });
+
+  mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+
+  // Build application menu
+  const menuTemplate = buildMenu();
+  Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
+}
+
+// ===== Menu =====
+function buildMenu() {
+  return [
+    {
+      label: '文件',
+      submenu: [
+        {
+          label: '打开文件...',
+          accelerator: 'CmdOrCtrl+O',
+          click: () => openFileDialog(),
+        },
+        {
+          label: '打开文件夹...',
+          accelerator: 'CmdOrCtrl+Shift+O',
+          click: () => openFolderDialog(),
+        },
+        { type: 'separator' },
+        {
+          label: '保存',
+          accelerator: 'CmdOrCtrl+S',
+          click: () => saveFile(),
+        },
+        {
+          label: '另存为...',
+          accelerator: 'CmdOrCtrl+Shift+S',
+          click: () => saveAsFile(),
+        },
+        { type: 'separator' },
+        {
+          label: '导出 HTML...',
+          accelerator: 'CmdOrCtrl+E',
+          click: () => mainWindow.webContents.send('export-html'),
+        },
+        { type: 'separator' },
+        {
+          label: '退出',
+          accelerator: 'CmdOrCtrl+Q',
+          click: () => app.quit(),
+        },
+      ],
+    },
+    {
+      label: '编辑',
+      submenu: [
+        { role: 'undo', label: '撤销' },
+        { role: 'redo', label: '重做' },
+        { type: 'separator' },
+        { role: 'cut', label: '剪切' },
+        { role: 'copy', label: '复制' },
+        { role: 'paste', label: '粘贴' },
+        { role: 'selectAll', label: '全选' },
+      ],
+    },
+    {
+      label: '视图',
+      submenu: [
+        {
+          label: '切换主题',
+          accelerator: 'CmdOrCtrl+T',
+          click: () => mainWindow.webContents.send('toggle-theme'),
+        },
+        { type: 'separator' },
+        { role: 'toggleDevTools', label: '开发者工具' },
+        { role: 'reload', label: '刷新' },
+        { role: 'togglefullscreen', label: '全屏' },
+      ],
+    },
+    {
+      label: '帮助',
+      submenu: [
+        {
+          label: '关于 MarkDown Pro',
+          click: () => {
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: '关于 MarkDown Pro',
+              message: 'MarkDown Pro v1.0.0',
+              detail: '一个本地 Markdown 查看器\n\n支持 CommonMark + GFM + Mermaid + KaTeX + 双链笔记\n\n完全离线，不依赖浏览器。',
+            });
+          },
+        },
+      ],
+    },
+  ];
+}
+
+// ===== IPC Handlers =====
+ipcMain.handle('open-file-dialog', async () => {
+  return openFileDialog();
+});
+
+ipcMain.handle('open-folder-dialog', async () => {
+  return openFolderDialog();
+});
+
+ipcMain.handle('save-file', async (event, { content, filePath }) => {
+  return saveFile(content, filePath);
+});
+
+ipcMain.handle('save-as-dialog', async (event, content) => {
+  return saveAsFile(content);
+});
+
+ipcMain.handle('read-file', async (event, filePath) => {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    return { success: true, content, filePath };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('read-directory', async (event, dirPath) => {
+  return readDirectory(dirPath);
+});
+
+ipcMain.handle('get-file-info', async (event, filePath) => {
+  try {
+    const stat = fs.statSync(filePath);
+    return {
+      name: path.basename(filePath),
+      dir: path.dirname(filePath),
+      size: stat.size,
+      modified: stat.mtime.toISOString(),
+    };
+  } catch (err) {
+    return null;
+  }
+});
+
+ipcMain.handle('app-get-path', (event, name) => {
+  return app.getPath(name);
+});
+
+// ===== File Operations =====
+async function openFileDialog() {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [
+      { name: 'Markdown 文件', extensions: ['md', 'markdown', 'mdown', 'mkd', 'mdx'] },
+      { name: '文本文件', extensions: ['txt'] },
+      { name: '所有文件', extensions: ['*'] },
+    ],
+  });
+
+  if (!result.canceled && result.filePaths.length > 0) {
+    const filePath = result.filePaths[0];
+    return await readAndSendFile(filePath);
+  }
+  return null;
+}
+
+async function openFolderDialog() {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory'],
+  });
+
+  if (!result.canceled && result.filePaths.length > 0) {
+    const dirPath = result.filePaths[0];
+    const files = readDirectory(dirPath);
+    mainWindow.webContents.send('folder-opened', { dirPath, files });
+    return { dirPath, files };
+  }
+  return null;
+}
+
+function readDirectory(dirPath) {
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    const files = [];
+    const folders = [];
+
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        folders.push({ name: entry.name, path: fullPath, isDir: true });
+      } else if (entry.name.match(/\.(md|markdown|mdown|mkd|mdx|txt)$/i)) {
+        const stat = fs.statSync(fullPath);
+        files.push({
+          name: entry.name,
+          path: fullPath,
+          isDir: false,
+          size: stat.size,
+          modified: stat.mtime.toISOString(),
+        });
+      }
+    }
+
+    // Sort: folders first, then files (alphabetically)
+    folders.sort((a, b) => a.name.localeCompare(b.name));
+    files.sort((a, b) => a.name.localeCompare(b.name));
+
+    return { folders, files, dirPath };
+  } catch (err) {
+    return { folders: [], files: [], dirPath, error: err.message };
+  }
+}
+
+async function readAndSendFile(filePath) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    currentFilePath = filePath;
+    mainWindow.webContents.send('file-opened', {
+      content,
+      filePath,
+      fileName: path.basename(filePath),
+      dirPath: path.dirname(filePath),
+    });
+    mainWindow.setTitle(`MarkDown Pro — ${path.basename(filePath)}`);
+    return { success: true, content, filePath };
+  } catch (err) {
+    dialog.showErrorBox('打开失败', `无法读取文件: ${err.message}`);
+    return { success: false, error: err.message };
+  }
+}
+
+function saveFile(content, filePath) {
+  const targetPath = filePath || currentFilePath;
+  if (!targetPath) return saveAsFile(content);
+
+  try {
+    fs.writeFileSync(targetPath, content, 'utf-8');
+    mainWindow.webContents.send('file-saved', { filePath: targetPath });
+    return { success: true, filePath: targetPath };
+  } catch (err) {
+    dialog.showErrorBox('保存失败', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+async function saveAsFile(content) {
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: currentFilePath || 'untitled.md',
+    filters: [
+      { name: 'Markdown 文件', extensions: ['md'] },
+      { name: '所有文件', extensions: ['*'] },
+    ],
+  });
+
+  if (!result.canceled && result.filePath) {
+    try {
+      fs.writeFileSync(result.filePath, content, 'utf-8');
+      currentFilePath = result.filePath;
+      mainWindow.setTitle(`MarkDown Pro — ${path.basename(result.filePath)}`);
+      mainWindow.webContents.send('file-saved', { filePath: result.filePath });
+      return { success: true, filePath: result.filePath };
+    } catch (err) {
+      dialog.showErrorBox('保存失败', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+  return null;
+}
+
+// ===== Handle file open from OS (double-click .md file) =====
+app.on('open-file', (event, filePath) => {
+  event.preventDefault();
+  if (mainWindow) {
+    readAndSendFile(filePath);
+  }
+});
+
+// ===== App Lifecycle =====
+app.whenReady().then(() => {
+  createWindow();
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+
+  // Handle file opened via command line or double-click
+  const fileArg = process.argv.find(arg => arg.endsWith('.md'));
+  if (fileArg && fs.existsSync(fileArg)) {
+    mainWindow.webContents.once('did-finish-load', () => {
+      readAndSendFile(path.resolve(fileArg));
+    });
+  }
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
