@@ -93,12 +93,20 @@ test('edit button exists in toolbar', () => {
 test('app.js has toggleEdit function', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src/app.js'), 'utf8');
   assert(app.includes('toggleEdit') || app.includes('function editMode'), 'edit mode function missing');
-  assert(app.includes('contenteditable') || app.includes('textarea'), 'editable element missing');
+  assert(app.includes('contentEditable'), 'editable element missing');
 });
 
-test('edit mode preserves markdown content', () => {
+test('edit mode has WYSIWYG toolbar', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'src/index.html'), 'utf8');
+  assert(html.includes('editor-toolbar'), 'editor toolbar missing');
+  assert(html.includes('contenteditable') === false, 'contenteditable should be in JS not HTML'); // sanity
+});
+
+test('edit mode preserves markdown content via turndown', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src/app.js'), 'utf8');
   assert(app.includes('currentContent'), 'currentContent reference missing in edit mode');
+  assert(app.includes('TurndownService'), 'TurndownService missing');
+  assert(app.includes('td.turndown'), 'turndown conversion call missing');
 });
 
 // ========== Cycle 5: PDF Export ==========

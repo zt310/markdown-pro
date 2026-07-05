@@ -60,10 +60,42 @@
           <button class="btn btn-small" id="btn-save" title="保存 (Ctrl+S)">💾 保存</button>
           <button class="btn btn-small" id="btn-export-html" title="导出 HTML (Ctrl+E)">🌐 HTML</button>
           <button class="btn btn-small" id="btn-export-pdf" title="导出 PDF (Ctrl+P)">📄 PDF</button>
-          <button class="btn btn-small" id="btn-edit" title="编辑模式 (Ctrl+D)">✏️ 编辑</button>
+          <button class="btn btn-small" id="btn-edit" title="WYSIWYG 编辑 (Ctrl+D)">✏️ 编辑</button>
         </div>
         <div class="toolbar-right">
           <span class="word-count" id="word-count">0 字</span>
+        </div>
+      </div>
+      <!-- WYSIWYG editor toolbar -->
+      <div class="editor-toolbar" id="editor-toolbar">
+        <div class="toolbar-group">
+          <button class="label-btn" data-cmd="h1">H1</button>
+          <button class="label-btn" data-cmd="h2">H2</button>
+          <button class="label-btn" data-cmd="h3">H3</button>
+        </div>
+        <div class="toolbar-sep"></div>
+        <div class="toolbar-group">
+          <button data-cmd="bold" title="粗体"><b>B</b></button>
+          <button data-cmd="italic" title="斜体"><i>I</i></button>
+          <button data-cmd="underline" title="下划线"><u>U</u></button>
+          <button data-cmd="strikeThrough" title="删除线"><s>S</s></button>
+        </div>
+        <div class="toolbar-sep"></div>
+        <div class="toolbar-group">
+          <button data-cmd="blockquote" title="引用">❝</button>
+          <button data-cmd="code" title="代码块">&lt;/&gt;</button>
+          <button data-cmd="createLink" title="链接">🔗</button>
+          <button data-cmd="insertTable" title="表格">⊞</button>
+        </div>
+        <div class="toolbar-sep"></div>
+        <div class="toolbar-group">
+          <button data-cmd="insertUnorderedList" title="无序列表">•</button>
+          <button data-cmd="insertOrderedList" title="有序列表">1.</button>
+        </div>
+        <div class="toolbar-sep"></div>
+        <div class="toolbar-group">
+          <button data-cmd="undo" title="撤销">↩</button>
+          <button data-cmd="redo" title="重做">↪</button>
         </div>
       </div>
       <div class="viewer-scroll" id="viewer-scroll">
@@ -102,6 +134,7 @@
 <script src="../node_modules/katex/dist/katex.min.js"></script>
 <script src="../node_modules/mermaid/dist/mermaid.min.js"></script>
 <script src="../node_modules/highlight.js/highlight.min.js"></script>
+<script src="../node_modules/turndown/lib/turndown.umd.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

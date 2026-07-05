@@ -1,7 +1,7 @@
 {
   "name": "markdown-pro",
   "version": "1.2.0",
-  "description": "\u4e00\u4e2a\u672c\u5730 Markdown \u67e5\u770b\u5668 \u2014 \u652f\u6301 CommonMark \u00b7 GFM \u00b7 Mermaid \u00b7 KaTeX \u00b7 \u53cc\u94fe\u7b14\u8bb0",
+  "description": "一个本地 Markdown 查看器 — 支持 CommonMark · GFM · Mermaid · KaTeX · 双链笔记",
   "author": "zt310",
   "license": "MIT",
   "repository": {
@@ -60,7 +60,8 @@
     "highlight.js": "^11.11.1",
     "katex": "^0.17.0",
     "markdown-it": "^14.3.0",
-    "mermaid": "^11.16.0"
+    "mermaid": "^11.16.0",
+    "turndown": "^7.2.4"
   },
   "devDependencies": {
     "electron": "^43.0.0",

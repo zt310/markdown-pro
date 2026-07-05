@@ -556,44 +556,53 @@ img{max-width:100%;border-radius:8px}</style></head>
     document.getElementById('btn-filetree').style.opacity = fileTreeVisible ? '1' : '0.5';
   }
 
-  // ===== Edit Mode =====
+  // ===== WYSIWYG Edit Mode (contentEditable + turndown) =====
   let editMode = false;
-  const editorTextarea = document.createElement('textarea');
-  editorTextarea.id = 'editor-textarea';
-  editorTextarea.style.cssText = 'display:none;width:100%;height:100%;padding:20px 24px;border:none;outline:none;resize:none;font-family:var(--font-mono);font-size:14px;line-height:1.7;background:var(--bg-editor);color:var(--text);tab-size:2';
+  const editorContent = document.createElement('div');
+  editorContent.id = 'editor-content';
+  editorContent.className = 'editor-content';
+  editorContent.contentEditable = true;
+
+  // Turndown service for HTML→Markdown conversion
+  const td = new TurndownService({
+    headingStyle: 'atx',
+    codeBlockStyle: 'fenced',
+    emDelimiter: '*',
+    bulletListMarker: '-',
+    hr: '---',
+  });
 
   function toggleEdit() {
     editMode = !editMode;
     const btn = document.getElementById('btn-edit');
+    const toolbar = document.getElementById('editor-toolbar');
     const scroll = document.getElementById('viewer-scroll');
     btn.textContent = editMode ? '👁️ 预览' : '✏️ 编辑';
 
     if (editMode) {
-      // Switch to edit: show textarea
-      editorTextarea.value = currentContent;
-      editorTextarea.style.display = 'block';
+      // Enter edit: render currentContent as HTML into contentEditable
+      const html = md.render(currentContent || '');
+      editorContent.innerHTML = html;
+      editorContent.classList.add('show');
+      toolbar.classList.add('show');
       renderedContent.style.display = 'none';
       scroll.innerHTML = '';
-      scroll.appendChild(editorTextarea);
-      // Add save button highlight
+      scroll.appendChild(editorContent);
+      editorContent.focus();
       document.getElementById('btn-save').style.borderColor = 'var(--accent)';
-      // Listen for Ctrl+S in textarea
-      editorTextarea.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-          e.preventDefault();
-          currentContent = editorTextarea.value;
-          render(currentContent);
-          // Don't exit edit mode unless user clicks preview
-        }
-        if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-          e.preventDefault();
-          toggleEdit();
-        }
-      });
     } else {
-      // Switch to preview: hide textarea, re-render
-      currentContent = editorTextarea.value;
-      editorTextarea.style.display = 'none';
+      // Exit edit: convert editable HTML back to Markdown via turndown
+      const rawHtml = editorContent.innerHTML;
+      let mdText = '';
+      try {
+        mdText = td.turndown(rawHtml);
+      } catch (e) {
+        console.warn('Turndown error, falling back to raw HTML:', e);
+        mdText = rawHtml;
+      }
+      currentContent = mdText;
+      editorContent.classList.remove('show');
+      toolbar.classList.remove('show');
       renderedContent.style.display = 'block';
       scroll.innerHTML = '';
       scroll.appendChild(renderedContent);
@@ -601,6 +610,76 @@ img{max-width:100%;border-radius:8px}</style></head>
       document.getElementById('btn-save').style.borderColor = '';
     }
   }
+
+  // Toolbar button handlers
+  document.getElementById('editor-toolbar').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const cmd = btn.dataset.cmd;
+
+    // Ensure editor has focus
+    if (cmd !== 'undo' && cmd !== 'redo') {
+      editorContent.focus();
+    }
+
+    switch (cmd) {
+      case 'h1': document.execCommand('formatBlock', false, 'h1'); break;
+      case 'h2': document.execCommand('formatBlock', false, 'h2'); break;
+      case 'h3': document.execCommand('formatBlock', false, 'h3'); break;
+      case 'bold': document.execCommand('bold'); break;
+      case 'italic': document.execCommand('italic'); break;
+      case 'underline': document.execCommand('underline'); break;
+      case 'strikeThrough': document.execCommand('strikeThrough'); break;
+      case 'blockquote': document.execCommand('formatBlock', false, 'blockquote'); break;
+      case 'code': document.execCommand('insertHTML', false, '<pre><code>代码</code></pre>'); break;
+      case 'createLink': {
+        const url = prompt('输入链接地址:', 'https://');
+        if (url) document.execCommand('createLink', false, url);
+        break;
+      }
+      case 'insertTable': {
+        const cols = prompt('列数:', '3') || '3';
+        const rows = prompt('行数:', '2') || '2';
+        let table = '<table><thead><tr>' + '<th>标题</th>'.repeat(parseInt(cols)) + '</tr></thead><tbody>';
+        for (let i = 1; i < parseInt(rows); i++) {
+          table += '<tr>' + '<td>内容</td>'.repeat(parseInt(cols)) + '</tr>';
+        }
+        table += '</tbody></table>';
+        document.execCommand('insertHTML', false, table);
+        break;
+      }
+      case 'insertUnorderedList': document.execCommand('insertUnorderedList'); break;
+      case 'insertOrderedList': document.execCommand('insertOrderedList'); break;
+      case 'undo': document.execCommand('undo'); break;
+      case 'redo': document.execCommand('redo'); break;
+    }
+  });
+
+  // Handle paste: strip unwanted formatting
+  editorContent.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, text);
+  });
+
+  // Handle Enter in headings/lists: insert proper block
+  editorContent.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      // Save while staying in edit mode
+      const rawHtml = editorContent.innerHTML;
+      try {
+        currentContent = td.turndown(rawHtml);
+      } catch (err) {
+        currentContent = rawHtml;
+      }
+      window.mdAPI.saveFile(currentContent, currentFilePath);
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+      e.preventDefault();
+      toggleEdit();
+    }
+  });
 
   document.getElementById('btn-edit').addEventListener('click', toggleEdit);
   async function exportPDF() {
