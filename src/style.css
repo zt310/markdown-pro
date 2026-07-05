@@ -167,10 +167,10 @@ body {
 }
 
 .dropdown-content {
-  position: absolute;
-  top: 4px;
-  right: 320px;
-  min-width: 200px;
+  position: fixed;
+  top: 40px;
+  right: 240px;
+  min-width: 220px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -178,7 +178,7 @@ body {
   padding: 4px 0;
   display: none;
   flex-direction: column;
-  z-index: 99;
+  z-index: 999;
 }
 .dark .dropdown-content { box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
 .dropdown-content.open { display: flex; }
@@ -214,6 +214,11 @@ body {
 }
 .menu-item:hover .shortcut { color: rgba(255,255,255,0.7); }
 .menu-separator { height: 1px; background: var(--border); margin: 4px 8px; }
+
+/* Cascading menu: group items show arrow, back button */
+.menu-group { font-weight: 600; }
+.menu-back { color: var(--text-secondary); font-size: 12px; }
+.menu-back .shortcut { font-size: 14px; margin-right: 6px; }
 
 /* ===== Window Control Buttons ===== */
 .win-btn {

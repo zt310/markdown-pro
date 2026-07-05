@@ -434,34 +434,66 @@ img{max-width:100%;border-radius:8px}</style></head>
     }
   });
 
-  // ===== Menu System (vertical dropdown) =====
+  // ===== Menu System (cascading groups) =====
+  let menuData = [];
 
-  // Build the full menu from structure
-  window.mdAPI.getMenuStructure().then(menuData => {
+  // Build cascading menu from structure
+  window.mdAPI.getMenuStructure().then(data => {
+    menuData = data;
+    showGroupLevel();
+  });
+
+  function showGroupLevel() {
     const content = document.getElementById('dropdown-content');
     let html = '';
     menuData.forEach((group, gi) => {
       if (gi > 0) html += '<div class="menu-separator"></div>';
-      group.items.forEach(item => {
-        if (item.type === 'separator') {
-          html += '<div class="menu-separator"></div>';
-        } else {
-          html += `<div class="menu-item" data-action="${item.action}">
-            <span>${item.label}</span>
-            ${item.accelerator ? `<span class="shortcut">${item.accelerator}</span>` : ''}
-          </div>`;
-        }
-      });
+      html += `<div class="menu-item menu-group" data-group="${gi}">
+        <span>${group.label}</span>
+        <span class="shortcut">›</span>
+      </div>`;
     });
     content.innerHTML = html;
-    // Click handlers
-    content.querySelectorAll('.menu-item').forEach(el => {
+    content.querySelectorAll('.menu-group').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const gi = parseInt(el.dataset.group);
+        showItemsLevel(gi);
+      });
+    });
+  }
+
+  function showItemsLevel(groupIndex) {
+    const group = menuData[groupIndex];
+    const content = document.getElementById('dropdown-content');
+    let html = `<div class="menu-item menu-back" data-group="${groupIndex}">
+      <span class="shortcut">‹</span>
+      <span>${group.label}</span>
+    </div><div class="menu-separator"></div>`;
+    group.items.forEach(item => {
+      if (item.type === 'separator') {
+        html += '<div class="menu-separator"></div>';
+      } else {
+        html += `<div class="menu-item" data-action="${item.action}">
+          <span>${item.label}</span>
+          ${item.accelerator ? `<span class="shortcut">${item.accelerator}</span>` : ''}
+        </div>`;
+      }
+    });
+    content.innerHTML = html;
+    // Back button
+    content.querySelector('.menu-back')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showGroupLevel();
+    });
+    // Action items
+    content.querySelectorAll('.menu-item:not(.menu-back)').forEach(el => {
       el.addEventListener('click', () => {
         handleMenuAction(el.dataset.action);
         closeMenu();
       });
     });
-  });
+  }
 
   function closeMenu() {
     menuOpen = false;
@@ -469,12 +501,13 @@ img{max-width:100%;border-radius:8px}</style></head>
     document.getElementById('menu-trigger').classList.remove('active');
   }
 
-  // Menu trigger toggle
+  // Menu trigger toggle — always show group level on open
   document.getElementById('menu-trigger').addEventListener('click', (e) => {
     e.stopPropagation();
     menuOpen = !menuOpen;
     document.getElementById('dropdown-content').classList.toggle('open', menuOpen);
     document.getElementById('menu-trigger').classList.toggle('active', menuOpen);
+    if (menuOpen) showGroupLevel();
   });
 
   // Close on outside click
@@ -483,9 +516,6 @@ img{max-width:100%;border-radius:8px}</style></head>
       closeMenu();
     }
   });
-
-  // Remove duplicate menuOpen from state section
-  // (menuOpen is already declared above in the new menu system)
 
   function handleMenuAction(action) {
     closeMenu();
@@ -513,30 +543,6 @@ img{max-width:100%;border-radius:8px}</style></head>
       case 'report-issue': window.mdAPI.openExternal('https://github.com/zt310/markdown-pro/issues/new'); break;
     }
   }
-
-  // Menu trigger button
-  document.getElementById('menu-trigger').addEventListener('click', () => {
-    menuOpen = !menuOpen;
-    document.getElementById('menu-bar').classList.toggle('open', menuOpen);
-    document.getElementById('menu-trigger').classList.toggle('active', menuOpen);
-    if (!menuOpen) {
-      document.getElementById('menu-panel').classList.remove('open');
-      document.querySelectorAll('.menu-bar-item').forEach(i => i.classList.remove('active'));
-      activeMenuIndex = -1;
-    }
-  });
-
-  // Close menu when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.dropdown-menu') && !e.target.closest('.menu-trigger')) {
-      menuOpen = false;
-      document.getElementById('menu-bar').classList.remove('open');
-      document.getElementById('menu-panel').classList.remove('open');
-      document.getElementById('menu-trigger').classList.remove('active');
-      document.querySelectorAll('.menu-bar-item').forEach(i => i.classList.remove('active'));
-      activeMenuIndex = -1;
-    }
-  });
 
   // ===== Window Controls =====
   document.getElementById('btn-min').addEventListener('click', () => window.mdAPI.minimize());

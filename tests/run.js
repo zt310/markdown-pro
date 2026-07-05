@@ -67,18 +67,19 @@ test('index.html: menu-trigger appears after btn-filetree', () => {
 // ========== Cycle 3: Vertical Menu ==========
 console.log('\n📋 Cycle 3: 竖列菜单');
 
-test('menu-bar and menu-panel are replaced by single dropdown', () => {
-  const html = fs.readFileSync(path.join(ROOT, 'src/index.html'), 'utf8');
-  // Should have a single dropdown container, not the horizontal bar
-  assert(html.includes('dropdown-menu'), 'dropdown-menu container missing');
-  // menu-bar should NOT exist anymore (removed horizontal bar)
-  assert(!html.includes('id="menu-bar"'), 'menu-bar horizontal bar still exists');
+test('cascading menu: groups shown first, items on click', () => {
+  const app = fs.readFileSync(path.join(ROOT, 'src/app.js'), 'utf8');
+  assert(app.includes('showGroupLevel'), 'showGroupLevel missing');
+  assert(app.includes('showItemsLevel'), 'showItemsLevel missing');
+  assert(app.includes('menu-group'), 'menu-group class missing');
+  assert(app.includes('menu-back'), 'menu-back class missing');
+  assert(!app.includes('menu-bar-item'), 'old horizontal menu code remains');
 });
 
-test('menu items rendered as vertical list in CSS', () => {
+test('cascading menu: close positioned near trigger', () => {
   const css = fs.readFileSync(path.join(ROOT, 'src/style.css'), 'utf8');
-  assert(css.includes('.dropdown-content'), 'dropdown-content class missing');
-  assert(css.includes('flex-direction: column'), 'not vertical column');
+  assert(!css.includes('right: 320'), 'old far right position');
+  assert(css.includes('position: fixed'), 'should use fixed positioning');
 });
 
 // ========== Cycle 4: Editing ==========
