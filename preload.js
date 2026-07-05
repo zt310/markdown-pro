@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('mdAPI', {
   // File operations
   openFileDialog: () => ipcRenderer.invoke('open-file-dialog'),
   openFolderDialog: () => ipcRenderer.invoke('open-folder-dialog'),
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
   saveFile: (content, filePath) => ipcRenderer.invoke('save-file', { content, filePath }),
   saveAsDialog: (content) => ipcRenderer.invoke('save-as-dialog', content),
   readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),

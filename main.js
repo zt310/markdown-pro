@@ -287,6 +287,15 @@ ipcMain.handle('window-maximize', () => {
 ipcMain.handle('window-close', () => mainWindow?.close());
 ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized());
 
+// External links (open in default browser)
+ipcMain.handle('open-external', (event, url) => {
+  if (typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))) {
+    shell.openExternal(url);
+    return true;
+  }
+  return false;
+});
+
 // PDF export
 ipcMain.handle('export-pdf', async () => {
   const { filePath, canceled } = await dialog.showSaveDialog(mainWindow, {

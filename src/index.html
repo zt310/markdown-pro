@@ -13,7 +13,6 @@
   <!-- ===== Custom Title Bar (frameless) ===== -->
   <header class="titlebar" id="titlebar">
     <div class="titlebar-left">
-      <div class="menu-trigger" id="menu-trigger" title="菜单">☰</div>
       <div class="logo">◈ Mark<span>Down</span> <small>Pro</small></div>
     </div>
     <div class="titlebar-center" id="titlebar-drag">
@@ -21,20 +20,20 @@
       <span class="save-indicator" id="save-indicator"></span>
     </div>
     <div class="titlebar-right">
-      <button class="win-btn" id="btn-theme" title="切换主题 (Ctrl+T)">🌙</button>
       <button class="win-btn" id="btn-filetree" title="文件树 (Ctrl+B)">📂</button>
+      <div class="menu-trigger" id="menu-trigger" title="菜单">☰</div>
       <div class="win-divider"></div>
+      <button class="win-btn" id="btn-theme" title="切换主题 (Ctrl+T)">🌙</button>
       <button class="win-btn win-btn-min" id="btn-min" title="最小化">─</button>
       <button class="win-btn win-btn-max" id="btn-max" title="最大化">□</button>
       <button class="win-btn win-btn-close" id="btn-close" title="关闭">✕</button>
     </div>
   </header>
 
-  <!-- ===== Dropdown Menu ===== -->
-  <nav class="dropdown-menu" id="dropdown-menu">
-    <div class="menu-bar" id="menu-bar"></div>
-    <div class="menu-panel" id="menu-panel"></div>
-  </nav>
+  <!-- ===== Dropdown Menu (vertical) ===== -->
+  <div class="dropdown-menu" id="dropdown-menu">
+    <div class="dropdown-content" id="dropdown-content"></div>
+  </div>
 
   <!-- ===== Main Content ===== -->
   <div class="main-content">
@@ -61,6 +60,7 @@
           <button class="btn btn-small" id="btn-save" title="保存 (Ctrl+S)">💾 保存</button>
           <button class="btn btn-small" id="btn-export-html" title="导出 HTML (Ctrl+E)">🌐 HTML</button>
           <button class="btn btn-small" id="btn-export-pdf" title="导出 PDF (Ctrl+P)">📄 PDF</button>
+          <button class="btn btn-small" id="btn-edit" title="编辑模式 (Ctrl+D)">✏️ 编辑</button>
         </div>
         <div class="toolbar-right">
           <span class="word-count" id="word-count">0 字</span>

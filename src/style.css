@@ -4,6 +4,7 @@
   --bg-secondary: #f5f6f8;
   --bg-tertiary: #ebecef;
   --bg-hover: #eef0f5;
+  --bg-editor: #fafbfc;
   --surface: #ffffff;
   --text: #1a1a2e;
   --text-secondary: #6b6d82;
@@ -141,7 +142,7 @@ body {
 .save-indicator.dirty { background: #f0c040; }
 .save-indicator.saved { background: #4caf50; }
 
-/* ===== Menu Trigger / Dropdown ===== */
+/* ===== Menu Trigger / Vertical Dropdown ===== */
 .menu-trigger {
   width: 28px;
   height: 28px;
@@ -150,7 +151,7 @@ body {
   justify-content: center;
   border-radius: var(--radius);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   color: var(--text-secondary);
   transition: all 0.12s;
 }
@@ -164,53 +165,34 @@ body {
   overflow: visible;
   flex-shrink: 0;
 }
-.menu-bar {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 0 12px 0 46px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  height: 0;
-  overflow: hidden;
-  transition: height 0.15s;
-}
-.menu-bar.open {
-  height: 30px;
-}
 
-.menu-bar-item {
-  padding: 4px 12px;
-  font-size: 13px;
-  cursor: pointer;
-  border-radius: 4px 4px 0 0;
-  color: var(--text-secondary);
-  position: relative;
-  white-space: nowrap;
-  transition: all 0.1s;
-}
-.menu-bar-item:hover,
-.menu-bar-item.active {
-  background: var(--bg-hover);
-  color: var(--text);
-}
-
-.menu-panel {
+.dropdown-content {
   position: absolute;
-  top: 0;
-  left: 8px;
-  min-width: 220px;
+  top: 4px;
+  right: 320px;
+  min-width: 200px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
   padding: 4px 0;
   display: none;
+  flex-direction: column;
   z-index: 99;
 }
-.menu-panel.open {
-  display: block;
+.dark .dropdown-content { box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+.dropdown-content.open { display: flex; }
+
+.menu-group-label {
+  padding: 6px 14px 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: default;
 }
+
 .menu-item {
   padding: 6px 14px;
   font-size: 13px;
@@ -221,6 +203,7 @@ body {
   gap: 24px;
   transition: background 0.08s;
   color: var(--text);
+  white-space: nowrap;
 }
 .menu-item:hover { background: var(--accent); color: #fff; }
 .menu-item .shortcut {
@@ -230,11 +213,7 @@ body {
   margin-left: auto;
 }
 .menu-item:hover .shortcut { color: rgba(255,255,255,0.7); }
-.menu-separator {
-  height: 1px;
-  background: var(--border);
-  margin: 4px 8px;
-}
+.menu-separator { height: 1px; background: var(--border); margin: 4px 8px; }
 
 /* ===== Window Control Buttons ===== */
 .win-btn {

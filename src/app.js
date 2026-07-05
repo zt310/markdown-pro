@@ -434,71 +434,61 @@ img{max-width:100%;border-radius:8px}</style></head>
     }
   });
 
-  // ===== Menu System =====
-  function buildMenuUI(menuData) {
-    const bar = document.getElementById('menu-bar');
-    const panel = document.getElementById('menu-panel');
-    bar.innerHTML = '';
-    menuData.forEach((group, i) => {
-      const item = document.createElement('div');
-      item.className = 'menu-bar-item';
-      item.textContent = group.label;
-      item.dataset.index = i;
-      item.addEventListener('click', () => toggleMenuPanel(i, menuData));
-      item.addEventListener('mouseenter', () => { if (menuOpen) toggleMenuPanel(i, menuData); });
-      bar.appendChild(item);
-    });
-  }
+  // ===== Menu System (vertical dropdown) =====
 
-  function toggleMenuPanel(index, menuData) {
-    const barItems = document.querySelectorAll('.menu-bar-item');
-    const panel = document.getElementById('menu-panel');
-    const bar = document.getElementById('menu-bar');
-
-    if (activeMenuIndex === index && panel.classList.contains('open')) {
-      panel.classList.remove('open');
-      barItems.forEach(i => i.classList.remove('active'));
-      activeMenuIndex = -1;
-      return;
-    }
-
-    activeMenuIndex = index;
-    barItems.forEach((i, idx) => i.classList.toggle('active', idx === index));
-
-    const group = menuData[index];
+  // Build the full menu from structure
+  window.mdAPI.getMenuStructure().then(menuData => {
+    const content = document.getElementById('dropdown-content');
     let html = '';
-    group.items.forEach(item => {
-      if (item.type === 'separator') {
-        html += '<div class="menu-separator"></div>';
-      } else {
-        html += `<div class="menu-item" data-action="${item.action}">
-          <span>${item.label}</span>
-          ${item.accelerator ? `<span class="shortcut">${item.accelerator}</span>` : ''}
-        </div>`;
-      }
+    menuData.forEach((group, gi) => {
+      if (gi > 0) html += '<div class="menu-separator"></div>';
+      group.items.forEach(item => {
+        if (item.type === 'separator') {
+          html += '<div class="menu-separator"></div>';
+        } else {
+          html += `<div class="menu-item" data-action="${item.action}">
+            <span>${item.label}</span>
+            ${item.accelerator ? `<span class="shortcut">${item.accelerator}</span>` : ''}
+          </div>`;
+        }
+      });
     });
-    panel.innerHTML = html;
-    panel.classList.add('open');
-
-    // Position panel below the clicked item
-    const trigger = document.getElementById('menu-trigger');
-    const barRect = bar.getBoundingClientRect();
-    panel.style.left = trigger.getBoundingClientRect().left + 'px';
-    panel.style.top = barRect.bottom + 'px';
-
+    content.innerHTML = html;
     // Click handlers
-    panel.querySelectorAll('.menu-item').forEach(el => {
-      el.addEventListener('click', () => handleMenuAction(el.dataset.action));
+    content.querySelectorAll('.menu-item').forEach(el => {
+      el.addEventListener('click', () => {
+        handleMenuAction(el.dataset.action);
+        closeMenu();
+      });
     });
+  });
+
+  function closeMenu() {
+    menuOpen = false;
+    document.getElementById('dropdown-content').classList.remove('open');
+    document.getElementById('menu-trigger').classList.remove('active');
   }
+
+  // Menu trigger toggle
+  document.getElementById('menu-trigger').addEventListener('click', (e) => {
+    e.stopPropagation();
+    menuOpen = !menuOpen;
+    document.getElementById('dropdown-content').classList.toggle('open', menuOpen);
+    document.getElementById('menu-trigger').classList.toggle('active', menuOpen);
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.dropdown-menu') && !e.target.closest('.menu-trigger')) {
+      closeMenu();
+    }
+  });
+
+  // Remove duplicate menuOpen from state section
+  // (menuOpen is already declared above in the new menu system)
 
   function handleMenuAction(action) {
-    // Close menu
-    document.getElementById('menu-panel').classList.remove('open');
-    document.querySelectorAll('.menu-bar-item').forEach(i => i.classList.remove('active'));
-    menuOpen = false;
-    activeMenuIndex = -1;
-
+    closeMenu();
     switch (action) {
       case 'open-file': window.mdAPI.openFileDialog(); break;
       case 'open-folder': window.mdAPI.openFolderDialog(); break;
@@ -519,8 +509,8 @@ img{max-width:100%;border-radius:8px}</style></head>
       case 'devtools': break; // Handled by Electron
       case 'check-update': window.mdAPI.checkForUpdates(); break;
       case 'about': window.mdAPI.getAppVersion().then(v => alert(`MarkDown Pro v${v}\n支持 CommonMark · GFM · Mermaid · KaTeX · 双链笔记\n\n完全离线，不依赖浏览器。`)); break;
-      case 'github': window.open('https://github.com/zt310/markdown-pro'); break;
-      case 'report-issue': window.open('https://github.com/zt310/markdown-pro/issues/new'); break;
+      case 'github': window.mdAPI.openExternal('https://github.com/zt310/markdown-pro'); break;
+      case 'report-issue': window.mdAPI.openExternal('https://github.com/zt310/markdown-pro/issues/new'); break;
     }
   }
 
@@ -566,7 +556,53 @@ img{max-width:100%;border-radius:8px}</style></head>
     document.getElementById('btn-filetree').style.opacity = fileTreeVisible ? '1' : '0.5';
   }
 
-  // ===== PDF Export =====
+  // ===== Edit Mode =====
+  let editMode = false;
+  const editorTextarea = document.createElement('textarea');
+  editorTextarea.id = 'editor-textarea';
+  editorTextarea.style.cssText = 'display:none;width:100%;height:100%;padding:20px 24px;border:none;outline:none;resize:none;font-family:var(--font-mono);font-size:14px;line-height:1.7;background:var(--bg-editor);color:var(--text);tab-size:2';
+
+  function toggleEdit() {
+    editMode = !editMode;
+    const btn = document.getElementById('btn-edit');
+    const scroll = document.getElementById('viewer-scroll');
+    btn.textContent = editMode ? '👁️ 预览' : '✏️ 编辑';
+
+    if (editMode) {
+      // Switch to edit: show textarea
+      editorTextarea.value = currentContent;
+      editorTextarea.style.display = 'block';
+      renderedContent.style.display = 'none';
+      scroll.innerHTML = '';
+      scroll.appendChild(editorTextarea);
+      // Add save button highlight
+      document.getElementById('btn-save').style.borderColor = 'var(--accent)';
+      // Listen for Ctrl+S in textarea
+      editorTextarea.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          currentContent = editorTextarea.value;
+          render(currentContent);
+          // Don't exit edit mode unless user clicks preview
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+          e.preventDefault();
+          toggleEdit();
+        }
+      });
+    } else {
+      // Switch to preview: hide textarea, re-render
+      currentContent = editorTextarea.value;
+      editorTextarea.style.display = 'none';
+      renderedContent.style.display = 'block';
+      scroll.innerHTML = '';
+      scroll.appendChild(renderedContent);
+      render(currentContent);
+      document.getElementById('btn-save').style.borderColor = '';
+    }
+  }
+
+  document.getElementById('btn-edit').addEventListener('click', toggleEdit);
   async function exportPDF() {
     const result = await window.mdAPI.exportPdf();
     if (result?.success) {
@@ -604,6 +640,10 @@ img{max-width:100%;border-radius:8px}</style></head>
     if (isCtrl && e.key === 'b') {
       e.preventDefault();
       toggleFileTree();
+    }
+    if (isCtrl && e.key === 'd') {
+      e.preventDefault();
+      toggleEdit();
     }
   });
 
