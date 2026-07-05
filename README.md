@@ -4,10 +4,10 @@
 
 **一个本地 Markdown 查看器**
 
-[![GitHub Release](https://img.shields.io/github/v/release/zt310/markdown-pro?style=flat-square&color=4f6ef7)](https://github.com/zt310/markdown-pro/releases/latest)
-[![License](https://img.shields.io/github/license/zt310/markdown-pro?style=flat-square&color=4f6ef7)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows-blue?style=flat-square&color=4f6ef7)](https://github.com/zt310/markdown-pro/releases/latest)
-[![Electron](https://img.shields.io/badge/Electron-43.0-47848f?style=flat-square)](https://www.electronjs.org/)
+![版本](https://img.shields.io/badge/版本-1.1.0-4f6ef7?style=flat-square)
+![许可](https://img.shields.io/badge/许可-MIT-4f6ef7?style=flat-square)
+![平台](https://img.shields.io/badge/平台-Windows-blue?style=flat-square)
+![Electron](https://img.shields.io/badge/Electron-43.0-47848f?style=flat-square)
 
 支持 CommonMark · GFM · Mermaid · KaTeX · [[双链笔记]] · 完全离线 · 不依赖浏览器
 
@@ -19,10 +19,10 @@
 
 | 版本 | 文件 | 说明 |
 |------|------|------|
-| **v1.0.0** | [📦 MarkDown-Pro-Portable.zip](https://github.com/zt310/markdown-pro/releases/download/v1.0.0/MarkDown-Pro-Portable.zip) | 便携版，解压即用（推荐） |
-| **v1.0.0** | [⚙️ MarkDown-Pro-Setup.exe](https://github.com/zt310/markdown-pro/releases/download/v1.0.0/MarkDown-Pro-Setup.exe) | 安装版（网络原因暂未生成） |
+| **v1.1.0** | [📦 MarkDown-Pro-Portable-v1.1.0.zip](https://github.com/zt310/markdown-pro/releases/download/v1.1.0/MarkDown-Pro-Portable-v1.1.0.zip) | 便携版，解压即用 |
+| **v1.1.0** | [⚙️ MarkDown-Pro-v1.1.0.exe](https://github.com/zt310/markdown-pro/releases/download/v1.1.0/MarkDown-Pro-v1.1.0.exe) | 自解压单文件版 |
 
-> 💡 便携版下载后解压到任意目录，双击 `MarkDown Pro.exe` 即可运行，无需安装。
+> 💡 便携版解压后双击 `MarkDown Pro.exe` 即可运行，无需安装。
 
 ---
 
@@ -38,13 +38,14 @@
 | **[[双链]]笔记** | ✅ Obsidian 风格双向链接，点击跳转文件 |
 | **文件树** | ✅ 打开文件夹后自动浏览 |
 | **暗色/亮色主题** | ✅ 一键切换 |
-| **导出 HTML** | ✅ 保留样式和代码高亮 |
+| **导出 HTML / PDF** | ✅ 保留样式和代码高亮 |
+| **自动更新** | ✅ 检测 GitHub 新版本 |
 | **拖拽打开** | ✅ 支持 .md 文件拖入 |
 
 ## 🚀 快速使用
 
 ```bash
-# 方式 1：下载便携版，解压后双击 MarkDown Pro.exe
+# 方式 1：下载便携版 / 自解压版，双击运行
 # 方式 2：从源码运行
 git clone https://github.com/zt310/markdown-pro.git
 cd markdown-pro
@@ -59,8 +60,11 @@ npm start
 | `Ctrl+O` | 打开文件 |
 | `Ctrl+Shift+O` | 打开文件夹 |
 | `Ctrl+S` | 保存文件 |
-| `Ctrl+T` | 切换主题 |
+| `Ctrl+P` | 导出 PDF |
 | `Ctrl+E` | 导出 HTML |
+| `Ctrl+T` | 切换主题 |
+| `Ctrl+B` | 切换文件树 |
+| `Ctrl+U` | 检查更新 |
 
 ## 🏗️ 技术栈
 
@@ -69,6 +73,7 @@ npm start
 - **KaTeX** — 数学公式渲染
 - **Mermaid 11** — 图表渲染
 - **highlight.js** — 代码语法高亮
+- **electron-updater** — 自动更新
 
 ## 📁 项目结构
 
