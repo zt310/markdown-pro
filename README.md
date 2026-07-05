@@ -2,11 +2,27 @@
 
 # ◈ MarkDown Pro
 
-**一个本地 Markdown 查看器 — 支持 CommonMark · GFM · Mermaid · KaTeX · 双链笔记**
+**一个本地 Markdown 查看器**
 
-完全离线，不依赖浏览器，开箱即用。
+[![GitHub Release](https://img.shields.io/github/v/release/zt310/markdown-pro?style=flat-square&color=4f6ef7)](https://github.com/zt310/markdown-pro/releases/latest)
+[![License](https://img.shields.io/github/license/zt310/markdown-pro?style=flat-square&color=4f6ef7)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows-blue?style=flat-square&color=4f6ef7)](https://github.com/zt310/markdown-pro/releases/latest)
+[![Electron](https://img.shields.io/badge/Electron-43.0-47848f?style=flat-square)](https://www.electronjs.org/)
+
+支持 CommonMark · GFM · Mermaid · KaTeX · [[双链笔记]] · 完全离线 · 不依赖浏览器
 
 </div>
+
+---
+
+## 📥 下载
+
+| 版本 | 文件 | 说明 |
+|------|------|------|
+| **v1.0.0** | [📦 MarkDown-Pro-Portable.zip](https://github.com/zt310/markdown-pro/releases/download/v1.0.0/MarkDown-Pro-Portable.zip) | 便携版，解压即用（推荐） |
+| **v1.0.0** | [⚙️ MarkDown-Pro-Setup.exe](https://github.com/zt310/markdown-pro/releases/download/v1.0.0/MarkDown-Pro-Setup.exe) | 安装版（网络原因暂未生成） |
+
+> 💡 便携版下载后解压到任意目录，双击 `MarkDown Pro.exe` 即可运行，无需安装。
 
 ---
 
@@ -25,20 +41,16 @@
 | **导出 HTML** | ✅ 保留样式和代码高亮 |
 | **拖拽打开** | ✅ 支持 .md 文件拖入 |
 
-## 🚀 快速开始
+## 🚀 快速使用
 
 ```bash
-# 1. 直接使用（无需安装）
-双击 build/win-unpacked/MarkDown Pro.exe
-
-# 2. 或从源码运行
+# 方式 1：下载便携版，解压后双击 MarkDown Pro.exe
+# 方式 2：从源码运行
+git clone https://github.com/zt310/markdown-pro.git
+cd markdown-pro
 npm install
 npm start
 ```
-
-## 📦 下载
-
-从 [Releases](https://github.com/YOUR_USERNAME/markdown-pro/releases) 页面下载最新版本。
 
 ## ⌨️ 快捷键
 
@@ -53,10 +65,10 @@ npm start
 ## 🏗️ 技术栈
 
 - **Electron 43** — 桌面应用框架
-- **markdown-it** — CommonMark/GFM 渲染
-- **KaTeX** — 数学公式
+- **markdown-it** — CommonMark / GFM 渲染引擎
+- **KaTeX** — 数学公式渲染
 - **Mermaid 11** — 图表渲染
-- **highlight.js** — 代码高亮
+- **highlight.js** — 代码语法高亮
 
 ## 📁 项目结构
 
@@ -75,7 +87,7 @@ md-viewer/
 └── package.json
 ```
 
-## 🔧 构建
+## 🔧 自行构建
 
 ```bash
 # 安装依赖
@@ -84,10 +96,11 @@ npm install
 # 开发运行
 npm start
 
-# 打包为独立 exe
-npm run dist
+# 打包
+npm run dist              # 便携版 .exe
+npm run dist-installer    # 安装版 .exe
 ```
 
 ## 📜 许可证
 
-MIT
+[MIT](LICENSE) © 2026 zt310
