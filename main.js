@@ -1,4 +1,5 @@
 const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 
@@ -37,6 +38,86 @@ function createWindow() {
   // Build application menu
   const menuTemplate = buildMenu();
   Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
+
+  // Initialize auto-updater
+  setupAutoUpdater();
+}
+
+// ===== Auto Updater =====
+function setupAutoUpdater() {
+  autoUpdater.autoDownload = false; // Let user choose when to download
+  autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'zt310',
+    repo: 'markdown-pro',
+  });
+
+  // Check for updates silently on startup (after 5s delay)
+  setTimeout(() => {
+    autoUpdater.checkForUpdates().catch(() => {});
+  }, 5000);
+
+  // Event handlers
+  autoUpdater.on('checking-for-update', () => {
+    mainWindow?.webContents.send('update-status', 'checking');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    mainWindow?.webContents.send('update-status', 'available', info);
+    // Show a dialog asking if user wants to download
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: '发现新版本',
+      message: `MarkDown Pro ${info.version} 可用`,
+      detail: `当前版本：v${app.getVersion()}\n新版本：${info.version}\n\n是否下载更新？`,
+      buttons: ['下载更新', '稍后再说'],
+      defaultId: 0,
+    }).then(({ response }) => {
+      if (response === 0) {
+        autoUpdater.downloadUpdate();
+        mainWindow?.webContents.send('update-status', 'downloading');
+      }
+    });
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    mainWindow?.webContents.send('update-status', 'up-to-date');
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    const pct = Math.round(progress.percent);
+    mainWindow?.webContents.send('update-status', 'progress', { percent: pct, bytesPerSecond: progress.bytesPerSecond, total: progress.total, transferred: progress.transferred });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    mainWindow?.webContents.send('update-status', 'downloaded', info);
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: '更新已下载',
+      message: `MarkDown Pro ${info.version} 已下载完成`,
+      detail: '是否立即安装并重启？',
+      buttons: ['立即安装', '稍后'],
+      defaultId: 0,
+    }).then(({ response }) => {
+      if (response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('Auto-updater error:', err.message);
+    mainWindow?.webContents.send('update-status', 'error', { message: err.message });
+  });
+}
+
+// Manually trigger update check (from menu)
+function checkForUpdates() {
+  mainWindow?.webContents.send('update-status', 'checking');
+  autoUpdater.checkForUpdates().catch((err) => {
+    mainWindow?.webContents.send('update-status', 'error', { message: err.message });
+  });
 }
 
 // ===== Menu =====
@@ -110,15 +191,30 @@ function buildMenu() {
       label: '帮助',
       submenu: [
         {
+          label: '检查更新...',
+          accelerator: 'CmdOrCtrl+U',
+          click: () => checkForUpdates(),
+        },
+        { type: 'separator' },
+        {
           label: '关于 MarkDown Pro',
           click: () => {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
               title: '关于 MarkDown Pro',
-              message: 'MarkDown Pro v1.0.0',
-              detail: '一个本地 Markdown 查看器\n\n支持 CommonMark + GFM + Mermaid + KaTeX + 双链笔记\n\n完全离线，不依赖浏览器。',
+              message: `MarkDown Pro v${app.getVersion()}`,
+              detail: '一个本地 Markdown 查看器\n\n支持 CommonMark + GFM + Mermaid + KaTeX + 双链笔记\n\n完全离线，不依赖浏览器。\n\n' + (autoUpdater.isUpdating ? '更新已就绪' : ''),
             });
           },
+        },
+        { type: 'separator' },
+        {
+          label: 'GitHub 主页',
+          click: () => shell.openExternal('https://github.com/zt310/markdown-pro'),
+        },
+        {
+          label: '报告问题',
+          click: () => shell.openExternal('https://github.com/zt310/markdown-pro/issues/new'),
         },
       ],
     },
@@ -171,6 +267,15 @@ ipcMain.handle('get-file-info', async (event, filePath) => {
 
 ipcMain.handle('app-get-path', (event, name) => {
   return app.getPath(name);
+});
+
+ipcMain.handle('check-for-updates', () => {
+  checkForUpdates();
+  return true;
+});
+
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
 });
 
 // ===== File Operations =====

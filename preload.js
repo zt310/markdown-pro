@@ -11,6 +11,10 @@ contextBridge.exposeInMainWorld('mdAPI', {
   getFileInfo: (filePath) => ipcRenderer.invoke('get-file-info', filePath),
   getAppPath: (name) => ipcRenderer.invoke('app-get-path', name),
 
+  // Update
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+
   // App events
   onFileOpened: (callback) => {
     ipcRenderer.on('file-opened', (event, data) => callback(data));
@@ -26,6 +30,13 @@ contextBridge.exposeInMainWorld('mdAPI', {
   },
   onExportHtml: (callback) => {
     ipcRenderer.on('export-html', () => callback());
+  },
+
+  // Update events
+  onUpdateStatus: (callback) => {
+    const handler = (event, status, data) => callback(status, data);
+    ipcRenderer.on('update-status', handler);
+    return () => ipcRenderer.removeListener('update-status', handler);
   },
 
   // Utility

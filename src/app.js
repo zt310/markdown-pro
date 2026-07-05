@@ -416,6 +416,38 @@ img{max-width:100%;border-radius:8px}</style></head>
 
   window.mdAPI.onExportHtml(() => exportHTML());
 
+  // ===== Update Status Handler =====
+  // Listen for update events from main process
+  const cleanupUpdateListener = window.mdAPI.onUpdateStatus((status, data) => {
+    const el = document.getElementById('status-grammar');
+    switch (status) {
+      case 'checking':
+        el.textContent = '⏳ 检查更新...';
+        break;
+      case 'available':
+        el.textContent = `⬇️ v${data.version} 可用`;
+        setTimeout(() => el.textContent = 'CommonMark + GFM', 8000);
+        break;
+      case 'downloading':
+        el.textContent = '📥 下载更新中...';
+        break;
+      case 'progress':
+        el.textContent = `📥 ${data.percent}%`;
+        break;
+      case 'downloaded':
+        el.textContent = '✅ 更新已就绪，重启安装';
+        break;
+      case 'up-to-date':
+        el.textContent = '✅ 已是最新';
+        setTimeout(() => el.textContent = 'CommonMark + GFM', 4000);
+        break;
+      case 'error':
+        el.textContent = '⚠️ 更新检查失败';
+        setTimeout(() => el.textContent = 'CommonMark + GFM', 4000);
+        break;
+    }
+  });
+
   // ===== Keyboard Shortcuts (in-page) =====
   document.addEventListener('keydown', (e) => {
     const isCtrl = e.ctrlKey || e.metaKey;
