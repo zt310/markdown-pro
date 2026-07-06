@@ -135,6 +135,44 @@ test('app.js has exportPDF function wired to button and menu', () => {
   assert(app.includes("export-pdf") || app.includes("export-pdf"), 'PDF menu action missing');
 });
 
+// ========== Cycle 6: File Association ==========
+console.log('\n📋 Cycle 6: 文件关联');
+
+test('main.js handles register-file-association IPC', () => {
+  const main = fs.readFileSync(path.join(ROOT, 'main.js'), 'utf8');
+  assert(main.includes('register-file-association'), 'register IPC handler missing');
+  assert(main.includes('execFileSync'), 'reg command execution missing');
+  assert(main.includes('HKCU'), 'registry path missing');
+});
+
+test('main.js handles unregister-file-association IPC', () => {
+  const main = fs.readFileSync(path.join(ROOT, 'main.js'), 'utf8');
+  assert(main.includes('unregister-file-association'), 'unregister IPC handler missing');
+});
+
+test('preload.js exposes registerFileAssociation', () => {
+  const preload = fs.readFileSync(path.join(ROOT, 'preload.js'), 'utf8');
+  assert(preload.includes('registerFileAssociation:'), 'missing from preload');
+  assert(preload.includes('unregisterFileAssociation:'), 'missing unregister from preload');
+});
+
+test('menu has set-default-md action', () => {
+  const main = fs.readFileSync(path.join(ROOT, 'main.js'), 'utf8');
+  assert(main.includes('set-default-md'), 'menu action missing');
+  assert(main.includes('unset-default-md'), 'menu action missing');
+});
+
+test('app.js handles set-default-md and unset-default-md actions', () => {
+  const app = fs.readFileSync(path.join(ROOT, 'src/app.js'), 'utf8');
+  assert(app.includes("case 'set-default-md'"), 'handler missing');
+  assert(app.includes("case 'unset-default-md'"), 'handler missing');
+});
+
+test('app.js has showToast function', () => {
+  const app = fs.readFileSync(path.join(ROOT, 'src/app.js'), 'utf8');
+  assert(app.includes('function showToast'), 'showToast missing');
+});
+
 // ========== Summary ==========
 console.log(`\n${'='.repeat(40)}`);
 if (failures === 0) {

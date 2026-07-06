@@ -541,6 +541,20 @@ img{max-width:100%;border-radius:8px}</style></head>
       case 'about': window.mdAPI.getAppVersion().then(v => alert(`MarkDown Pro v${v}\n支持 CommonMark · GFM · Mermaid · KaTeX · 双链笔记\n\n完全离线，不依赖浏览器。`)); break;
       case 'github': window.mdAPI.openExternal('https://github.com/zt310/markdown-pro'); break;
       case 'report-issue': window.mdAPI.openExternal('https://github.com/zt310/markdown-pro/issues/new'); break;
+      case 'set-default-md': {
+        window.mdAPI.registerFileAssociation().then(r => {
+          if (r.success) showToast('✅ 已设为 .md 文件默认打开方式');
+          else showToast('❌ 设置失败: ' + (r.error || ''));
+        });
+        break;
+      }
+      case 'unset-default-md': {
+        window.mdAPI.unregisterFileAssociation().then(r => {
+          if (r.success) showToast('✅ 已取消 .md 文件关联');
+          else showToast('❌ 取消失败: ' + (r.error || ''));
+        });
+        break;
+      }
     }
   }
 
@@ -688,6 +702,23 @@ img{max-width:100%;border-radius:8px}</style></head>
   });
 
   document.getElementById('btn-edit').addEventListener('click', toggleEdit);
+
+  // ===== Toast Notification =====
+  let toastTimer = null;
+  function showToast(msg) {
+    let el = document.getElementById('toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'toast';
+      el.style.cssText = 'position:fixed;bottom:40px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:8px;background:var(--bg);border:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,0.15);color:var(--text);font-size:13px;opacity:0;transition:all .3s;pointer-events:none;z-index:9999';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.style.opacity = '0', 2500);
+  }
+
   async function exportPDF() {
     const result = await window.mdAPI.exportPdf();
     if (result?.success) {

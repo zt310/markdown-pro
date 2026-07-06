@@ -24,6 +24,8 @@ contextBridge.exposeInMainWorld('mdAPI', {
   // Update
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+  registerFileAssociation: () => ipcRenderer.invoke('register-file-association'),
+  unregisterFileAssociation: () => ipcRenderer.invoke('unregister-file-association'),
 
   // Events
   onFileOpened: (cb) => ipcRenderer.on('file-opened', (_e, d) => cb(d)),

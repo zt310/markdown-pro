@@ -296,6 +296,44 @@ ipcMain.handle('open-external', (event, url) => {
   return false;
 });
 
+// File association (.md)
+ipcMain.handle('register-file-association', async () => {
+  const exePath = app.getPath('exe');
+  // For unpacked dev builds, use the actual exe path
+  // For packaged builds, app.getPath('exe') returns the correct path
+  try {
+    const { execFileSync } = require('child_process');
+    const iconPath = exePath;
+    const cmd = `"${exePath}" "%1"`;
+
+    // Register .md extension
+    execFileSync('reg', ['add', 'HKCU\\Software\\Classes\\.md', '/ve', '/d', 'markdown-pro', '/f']);
+    // Register prog ID
+    execFileSync('reg', ['add', 'HKCU\\Software\\Classes\\markdown-pro', '/ve', '/d', 'MarkDown Pro Document', '/f']);
+    // Set open command
+    execFileSync('reg', ['add', 'HKCU\\Software\\Classes\\markdown-pro\\shell\\open\\command', '/ve', '/d', cmd, '/f']);
+    // Set icon
+    execFileSync('reg', ['add', 'HKCU\\Software\\Classes\\markdown-pro\\DefaultIcon', '/ve', '/d', `${iconPath},0`, '/f']);
+    // Notify Windows of change
+    execFileSync('reg', ['add', 'HKCU\\Software\\Classes\\markdown-pro\\shell\\open\\command', '/f']);
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('unregister-file-association', async () => {
+  try {
+    const { execFileSync } = require('child_process');
+    execFileSync('reg', ['delete', 'HKCU\\Software\\Classes\\.md', '/ve', '/f']);
+    execFileSync('reg', ['delete', 'HKCU\\Software\\Classes\\markdown-pro', '/f']);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 // PDF export
 ipcMain.handle('export-pdf', async () => {
   const { filePath, canceled } = await dialog.showSaveDialog(mainWindow, {
@@ -334,6 +372,9 @@ function buildMenuStructure() {
         { type: 'separator' },
         { label: '导出 HTML...', accelerator: 'Ctrl+E', action: 'export-html' },
         { label: '导出 PDF...', accelerator: 'Ctrl+P', action: 'export-pdf' },
+        { type: 'separator' },
+        { label: '设为默认 .md 打开方式', action: 'set-default-md' },
+        { label: '取消 .md 关联', action: 'unset-default-md' },
         { type: 'separator' },
         { label: '退出', accelerator: 'Ctrl+Q', action: 'quit' },
       ],
