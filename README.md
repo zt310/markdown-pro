@@ -4,7 +4,7 @@
 
 **一个本地 Markdown 查看器**
 
-![版本](https://img.shields.io/badge/版本-1.2.1-4f6ef7?style=flat-square)
+![版本](https://img.shields.io/badge/版本-1.3.0-4f6ef7?style=flat-square)
 ![许可](https://img.shields.io/badge/许可-MIT-4f6ef7?style=flat-square)
 ![平台](https://img.shields.io/badge/平台-Windows-blue?style=flat-square)
 ![Electron](https://img.shields.io/badge/Electron-43.0-47848f?style=flat-square)
@@ -19,8 +19,8 @@
 
 | 版本 | 文件 | 说明 |
 |------|------|------|
-| **v1.2.1** | [📦 MarkDown-Pro-Portable-v1.2.1.zip](https://github.com/zt310/markdown-pro/releases/download/v1.2.1/MarkDown-Pro-Portable-v1.2.1.zip) | 便携版，解压即用 |
-| **v1.2.1** | [⚙️ MarkDown-Pro-v1.2.1.exe](https://github.com/zt310/markdown-pro/releases/download/v1.2.1/MarkDown-Pro-v1.2.1.exe) | 自解压单文件版 |
+| **v1.3.0** | [📦 MarkDown-Pro-Portable-v1.3.0.zip](https://github.com/zt310/markdown-pro/releases/download/v1.3.0/MarkDown-Pro-Portable-v1.3.0.zip) | 便携版，解压即用 |
+| **v1.3.0** | [⚙️ MarkDown-Pro-v1.3.0.exe](https://github.com/zt310/markdown-pro/releases/download/v1.3.0/MarkDown-Pro-v1.3.0.exe) | 自解压单文件版 |
 
 > 💡 便携版解压后双击 `MarkDown Pro.exe` 即可运行，无需安装。
 
